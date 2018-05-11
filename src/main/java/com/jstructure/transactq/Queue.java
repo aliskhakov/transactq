@@ -39,7 +39,7 @@ public class Queue implements IQueue {
                     "WHERE queue_id = ? " +
                     "ORDER BY created_at " +
                     "LIMIT 1 " +
-                    "FOR UPDATE SKIP LOCKED ");
+                    "FOR UPDATE SKIP LOCKED");
             statement.setLong(1, id);
             ResultSet result = statement.executeQuery();
             if (result.next()) {

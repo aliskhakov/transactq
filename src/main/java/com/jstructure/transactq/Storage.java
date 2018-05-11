@@ -22,7 +22,7 @@ public class Storage implements IStorage {
     @Override
     public boolean declareQueue(String name) {
         try {
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO queue(name) VALUES (?)" +
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO queue(name) VALUES (?) " +
                     "ON CONFLICT DO NOTHING");
             statement.setString(1, name);
             statement.executeUpdate();
@@ -37,7 +37,7 @@ public class Storage implements IStorage {
     @Override
     public boolean deleteQueue(String name) {
         try {
-            PreparedStatement statement = connection.prepareStatement("DELETE FROM queue WHERE name = ?)");
+            PreparedStatement statement = connection.prepareStatement("DELETE FROM queue WHERE name = ?");
             statement.setString(1, name);
             statement.executeQuery();
             // TODO: check if queue removed
