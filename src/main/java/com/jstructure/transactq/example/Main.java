@@ -19,7 +19,9 @@ public class Main {
 
         IStorage storage = new Storage(connection);
         storage.declareQueue("testQueue");
+        storage.declareQueue("testQueue2");
         IQueue queue = storage.getQueue("testQueue");
+        IQueue queue2 = storage.getQueue("testQueue2");
         for (int i = 0; i < 100; i++) {
             queue.push(new Message("{\"key\": " + i + "}"));
         }
@@ -27,8 +29,8 @@ public class Main {
             IMessage message;
             while ((message = queue.get()) != null) {
                 System.out.println(message.getPayload());
+                queue2.push(new Message(message.getPayload()));
                 queue.ack();
-                Thread.sleep(1000);
             }
         } catch (Exception e) {
             e.printStackTrace();
