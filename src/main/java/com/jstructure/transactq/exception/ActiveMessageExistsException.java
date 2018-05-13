@@ -1,4 +1,4 @@
-package com.jstructure.transactq;
+package com.jstructure.transactq.exception;
 
 public class ActiveMessageExistsException extends RuntimeException {
     public ActiveMessageExistsException() {

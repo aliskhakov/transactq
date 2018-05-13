@@ -1,5 +1,6 @@
 package com.jstructure.transactq;
 
+import com.jstructure.transactq.exception.ActiveMessageExistsException;
 import com.jstructure.transactq.lib.IMessage;
 import com.jstructure.transactq.lib.IQueue;
 
