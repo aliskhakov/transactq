@@ -11,26 +11,21 @@ class ConnectionManager implements IConnectionManager {
     private String dbUrl;
     private String dbUser;
     private String dbPassword;
-    private Connection connection;
 
     ConnectionManager(String dbUrl, String dbUser, String dbPassword) {
         this.dbUrl = dbUrl;
         this.dbUser = dbUser;
         this.dbPassword = dbPassword;
-        connect();
     }
 
     @Override
-    public Connection getConnection() {
-        return connection;
-    }
-
-    private void connect() {
+    public Connection createConnection() {
         try {
             Class.forName(PG_DRIVER_PACKAGE);
-            connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+            return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace(); // TODO: use logger
         }
+        return null;
     }
 }
