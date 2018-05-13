@@ -3,7 +3,7 @@ TransactQ
 
 Transactional message queue based on [Postgres](https://www.postgresql.org/).
 
-See [the example](transactq/blob/master/src/main/java/com/jstructure/transactq/example).
+See [the example](src/main/java/com/jstructure/transactq/example).
 
 ## Requirements
 
@@ -12,4 +12,4 @@ See [the example](transactq/blob/master/src/main/java/com/jstructure/transactq/e
 
 ## Installation
 
-Create a database and [required tables](transactq/blob/master/src/main/resources/tables.sql) in Postgres.
+Create a database and [required tables](src/main/resources/tables.sql) in Postgres.
