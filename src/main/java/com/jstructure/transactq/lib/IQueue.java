@@ -5,7 +5,7 @@ import java.util.List;
 public interface IQueue {
     List<IMessage> get(int limit);
 
-    IMessage get() throws Exception;
+    IMessage get();
 
     boolean ack();
 

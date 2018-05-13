@@ -10,10 +10,20 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class Queue implements IQueue {
+    static final String GET_FIRST_MESSAGE_SQL = "SELECT payload, id " +
+            "FROM message " +
+            "WHERE queue_id = ? " +
+            "ORDER BY created_at " +
+            "LIMIT 1 " +
+            "FOR UPDATE SKIP LOCKED";
+    static final String DELETE_MESSAGE_SQL = "DELETE FROM message WHERE id = ?";
+    static final String INSERT_MESSAGE_SQL = "INSERT INTO message(queue_id, payload) VALUES (?, ?)";
+
+    static final String MESSAGE_PAYLOAD_COLUMN_KEY = "payload";
+    static final String MESSAGE_ID_COLUMN_KEY = "id";
+
     private Connection connection;
-
     private long id;
-
     private Message activeMessage;
 
     Queue(Connection connection, long id) {
@@ -27,39 +37,32 @@ public class Queue implements IQueue {
     }
 
     @Override
-    public IMessage get() throws Exception {
+    public IMessage get() {
         if (activeMessage != null) {
-            throw new Exception("You have not acked message. Ack it before.");
+            throw new ActiveMessageExistsException();
         }
 
-        try {
+        try (PreparedStatement statement = connection.prepareStatement(GET_FIRST_MESSAGE_SQL)) {
             connection.setAutoCommit(false);
-            PreparedStatement statement = connection.prepareStatement("SELECT payload, id " +
-                    "FROM message " +
-                    "WHERE queue_id = ? " +
-                    "ORDER BY created_at " +
-                    "LIMIT 1 " +
-                    "FOR UPDATE SKIP LOCKED");
             statement.setLong(1, id);
-            ResultSet result = statement.executeQuery();
-            if (result.next()) {
-                activeMessage = new Message(result.getString("payload"), result.getLong("id"));
-            } else {
-                connection.commit();
-                connection.setAutoCommit(true);
+            try (ResultSet result = statement.executeQuery()) {
+                if (result.next()) {
+                    activeMessage = new Message(result.getString(MESSAGE_PAYLOAD_COLUMN_KEY), result.getLong(MESSAGE_ID_COLUMN_KEY));
+                } else {
+                    connection.commit();
+                    connection.setAutoCommit(true);
+                }
             }
-            return activeMessage;
         } catch (SQLException e) {
             e.printStackTrace(); // TODO: logger
         }
-        return null;
+        return activeMessage;
     }
 
     @Override
     public boolean ack() {
         boolean result = false;
-        try {
-            PreparedStatement statement = connection.prepareStatement("DELETE FROM message WHERE id = ?");
+        try (PreparedStatement statement = connection.prepareStatement(DELETE_MESSAGE_SQL)) {
             statement.setLong(1, activeMessage.getId());
             statement.executeUpdate();
             connection.commit();
@@ -85,8 +88,7 @@ public class Queue implements IQueue {
 
     @Override
     public boolean push(IMessage message) {
-        try {
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO message(queue_id, payload) VALUES (?, ?)");
+        try (PreparedStatement statement = connection.prepareStatement(INSERT_MESSAGE_SQL)) {
             statement.setLong(1, id);
             statement.setString(2, message.getPayload());
             statement.executeUpdate();

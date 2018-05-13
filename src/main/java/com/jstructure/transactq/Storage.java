@@ -11,8 +11,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Storage implements IStorage {
-    private Connection connection;
+    static final String UPSERT_QUEUE_SQL = "INSERT INTO queue(name) VALUES (?) ON CONFLICT DO NOTHING";
+    static final String DELETE_QUEUE_SQL = "DELETE FROM queue WHERE name = ?";
+    static final String GET_QUEUE_SQL = "SELECT id FROM queue WHERE name = ?";
 
+    static final String QUEUE_ID_COLUMN_KEY = "id";
+
+    private Connection connection;
     private Map<String, IQueue> queues = new HashMap<>();
 
     public Storage(Connection connection) {
@@ -21,9 +26,7 @@ public class Storage implements IStorage {
 
     @Override
     public boolean declareQueue(String name) {
-        try {
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO queue(name) VALUES (?) " +
-                    "ON CONFLICT DO NOTHING");
+        try (PreparedStatement statement = connection.prepareStatement(UPSERT_QUEUE_SQL)) {
             statement.setString(1, name);
             statement.executeUpdate();
             // TODO: put queue to local queues
@@ -36,8 +39,7 @@ public class Storage implements IStorage {
 
     @Override
     public boolean deleteQueue(String name) {
-        try {
-            PreparedStatement statement = connection.prepareStatement("DELETE FROM queue WHERE name = ?");
+        try (PreparedStatement statement = connection.prepareStatement(DELETE_QUEUE_SQL)) {
             statement.setString(1, name);
             statement.executeQuery();
             // TODO: check if queue removed
@@ -51,21 +53,20 @@ public class Storage implements IStorage {
 
     @Override
     public IQueue getQueue(String name) {
-        IQueue queue = queues.get(name);
-        if (queue == null) {
-            try {
-                PreparedStatement statement = connection.prepareStatement("SELECT id FROM queue WHERE name = ?");
-                statement.setString(1, name);
-                ResultSet result = statement.executeQuery();
-                // TODO: check if queue exists
-                if (result.next()) {
-                    queue = new Queue(connection, result.getLong("id"));
+        return queues.computeIfAbsent(name, k -> {
+            IQueue queue = queues.get(k);
+            try (PreparedStatement statement = connection.prepareStatement(GET_QUEUE_SQL)) {
+                statement.setString(1, k);
+                try (ResultSet result = statement.executeQuery()) {
+                    // TODO: check if queue exists
+                    if (result.next()) {
+                        queue = new Queue(connection, result.getLong(QUEUE_ID_COLUMN_KEY));
+                    }
                 }
-                queues.put(name, queue);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-        }
-        return queue;
+            return queue;
+        });
     }
 }
